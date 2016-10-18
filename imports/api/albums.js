@@ -1,4 +1,4 @@
-/*import { Mongo } from 'meteor/mongo';
+import { Mongo } from 'meteor/mongo';
 
 Albums = new Mongo.Collection( 'albums' );
 
@@ -33,4 +33,37 @@ let AlbumsSchema = new SimpleSchema({
   }
 });
 
-Albums.attachSchema( AlbumsSchema );*/
+Albums.attachSchema( AlbumsSchema );
+
+Meteor.publish( 'albums', function( search ) {
+  check( search, Match.OneOf( String, null, undefined ) );
+
+  let query      = {},
+      projection = { limit: 10, sort: { title: 1 } };
+
+  if ( search ) {
+    let regex = new RegExp( search, 'i' );
+
+    query = {
+      $or: [
+        { title: regex },
+        { artist: regex },
+        { year: regex }
+      ]
+    };
+
+    projection.limit = 100;
+  }
+
+  return Albums.find( query, projection );
+});
+
+Meteor.methods({
+  'insert .album'(artist, album, year) {
+    Albums.insert({
+      artist: artist,
+      title: title,
+      year: year
+    });
+  }
+});
